@@ -1,0 +1,165 @@
+
+              PCI-LTC/RDR BOARD PCI I/O MEMORY MAP
+
+Following is an abbreviated memory map of PCI-LTC/RDR board DPRAM
+registers as viewed from the PCI bus (application software)  side
+of  things.  Only registers and bits which are pertinent to  this
+particular application are listed.  All other registers and  bits
+are reserved.  Reading or writing reserved registers or bits  may
+lead  to  unpredictable results, including damage  to  the  board
+(because it is an in-circuit programmable device) which  requires
+that  the  board be returned to the factory  for  repairs.   When
+writing  to bit mapped registers, be sure to write zeroes to  any
+reserved bits (the default state - won't hurt anything).   Please
+call us if you have any questions or find any problems:
+
+
+  I/O     Init
+Address   Value   Type   Description
+
+  00h      CBh     RO    AEC vendor code (low byte).
+  01h      AEh     RO    AEC vendor code (high byte).
+  02h      50h     RO    PCI-TC board number code (low byte).
+  03h      62h     RO    PCI-TC board number code (high byte).
+
+  06h      xxh     RO    Software revision letter (ASCII A-Z).
+  07h      xxh     RO    Software revision number (ASCII 1-9).
+  08h      10h     RO    Board capabilities code:
+                           Bit 7  =>  VITC Generator installed
+                           Bit 6  =>  VITC Reader installed
+                           Bit 5  =>  LTC Generator installed
+                           Bit 4  =>  LTC Reader installed
+                           Bit 1  =>  Serial Interface installed
+
+  0Dh      01h     RO    Board operating mode information:
+                           Bit 7  =>  Diagnostics active
+                           Bit 6  =>  reserved
+                           Bit 5  =>  LTC(1) or VITC(0) selected
+                           Bit 4  =>  EBU(1) or SMPTE(0) selected
+                           Bit 3  =>  VITC Generator active
+                           Bit 2  =>  LTC Generator active
+                           Bit 1  =>  VITC Reader active
+                           Bit 0  =>  LTC Reader active
+
+  0Eh      00h     RO    Pending interrupts bit map:
+                           Bit 7  =>  Command Response
+                           Bit 6  =>  reserved
+                           Bit 5  =>  TC Comparator
+                           Bit 4  =>  Serial Receive Data
+                           Bit 3  =>  Serial Transmit Data
+                           Bit 2  =>  TC Generator
+                           Bit 1  =>  Video Field
+                           Bit 0  =>  TC Reader
+                         Note that bits may be "1" even if
+                         disabled via DPRAM register 2Eh.
+
+
+              PCI-LTC/RDR BOARD PCI I/O MEMORY MAP
+                           (continued)
+
+
+  I/O     Init
+Address   Value   Type   Description
+
+  0Fh      00h     RO    Board-to-Host Mailbox Port
+                         (caution - see interface protocol)
+
+  10h      00h     RO    Selected reader time bits frames.
+  11h      00h     RO    Selected reader time bits seconds.
+  12h      00h     RO    Selected reader time bits minutes.
+  13h      00h     RO    Selected reader time bits hours.
+                         (all data is in packed BCD format)
+
+  14h      00h     RO    Selected reader user bits frames.
+  15h      00h     RO    Selected reader user bits seconds.
+  16h      00h     RO    Selected reader user bits minutes.
+  17h      00h     RO    Selected reader user bits hours.
+                         (all data is in packed BCD format)
+
+  18h      00h     RO    Selected reader embedded bits:
+                           Bit 7  =>  LTC bit 10 (drop frame)
+                           Bit 6  =>  LTC bit 11 (color framed)
+                           Bit 3  =>  LTC bit 27 (unassigned)
+                           Bit 2  =>  LTC bit 59 (unassigned)
+                           Bit 1  =>  LTC bit 58 (unassigned)
+                           Bit 0  =>  LTC bit 43 (unassigned)
+
+  19h      00h     RO    Selected reader status bits:
+                           Bit 7  =>  Toggles whenever data ready
+                           Bit 6  =>  FWD(1) or REV(0) direction
+                           Bit 3  =>  1 if TC bit error detected
+                           Bit 1  =>  1 if VITC data is "selected"
+                           Bit 0  =>  1 if LTC data is "selected"
+
+  1Bh      00h     RO    TC comparator status bits:
+                           Bit 7  =>  1 if comparator is active
+                                      (valid after next TC frame)
+                           Bit 4  =>  Toggles to match 2Dh bit 4
+                                      whenever a match is found.
+
+  1Ch      00h     RO    Board-to-Host Mailbox Data Area
+  1Dh      00h     RO           (4 bytes total)
+  1Eh      00h     RO    In some cases contains data associated
+  1Fh      00h     RO      with the mailbox port at 0Fh.
+
+-----------------------------------------------------------------
+            (end of PCI read-only registers, 00h-1Fh)
+
+
+
+
+
+              PCI-LTC/RDR BOARD PCI I/O MEMORY MAP
+                           (continued)
+
+
+  I/O     Init
+Address   Value   Type   Description
+
+        (beginning of PCI read-write registers, 20h-3Fh)
+-----------------------------------------------------------------
+
+  20h      00h     RW    Host-to-Board Mailbox Data Area
+  21h      00h     RW           (4 bytes total)
+  22h      00h     RW    In some cases contains data associated
+  23h      00h     RW      with the mailbox port at 2Fh.
+
+  2Ch      00h     RW    LTC reader control:
+                           Bit 1  =>  Leave embedded bits mixed
+                                      in with the time bits.
+
+  2Dh      00h     RW    Comparator control:
+                           Bit 4  =>  Toggle this bit once
+                                      to start next comparison.
+                           Bit 0  =>  Look for exact match or
+                                      "up to 1 second greater
+                                       than" match (default).
+                         (normal inputs are 11h/01h)
+
+  2Eh      00h     RW    Interrupt control bit map:
+                           Bit 5  =>  TC Comparator enabled
+                           Bit 4  =>  Serial Receive enabled
+                           Bit 3  =>  Serial Transmit enabled
+                           Bit 2  =>  TC Generator enabled
+                           Bit 1  =>  Video Field enabled
+                           Bit 0  =>  TC Reader enabled
+                         (command responses are always enabled)
+
+  2Fh      00h     RW    Host-to-Board Mailbox Port
+                         (caution - see interface protocol)
+
+  30h      00h     RW    Comparator time bits frames.
+  31h      00h     RW    Comparator time bits seconds.
+  32h      00h     RW    Comparator time bits minutes.
+  33h      00h     RW    Comparator time bits hours.
+                         (all data is in packed BCD format)
+
+  FEh      00h     RO    Special board status register:
+                           Bit 4  =>  INTA# line driving enabled.
+                           Bit 2  =>  Mailbox at 2Fh is full.
+                           Bit 1  =>  INTA# line is being driven.
+                           Bit 0  =>  Mailbox data ready at 0Fh.
+
+
+
+(RO => read only;  RW => read/write;  RWC => write a 1 to clear)

@@ -1,0 +1,219 @@
+
+
+               PCI-TC BOARD PCI INTERFACE PROTOCOL
+
+
+
+Background:
+This  document explains how application software  must  interface
+with our PCI-TC family of boards once PCI configuration has  been
+completed  (and I/O operations enabled).  The following,  written
+from the perspective of the application software, models the PCI-
+TC  board  as using a Dual Port RAM (DPRAM inside  the  FPGA)  to
+provide the primary interface to the on-board AVR microcontroller
+(coprocessor).  Only I/O accesses are described here.
+
+
+Sending Commands to the Board:
+Whenever  the application software writes data to  the  "Host-to-
+Board  Mailbox  Port"  at  PCI offset  address  2Fh,  a  hardware
+interrupt is generated for the coprocessor, which then reads that
+command byte as part of its interrupt service routine.  Note that
+the  write to PCI offset address 2Fh could be accomplished via  a
+byte  (8-bit)  write to 2Fh, a word (16-bit) write to 2Eh,  or  a
+doubleword (32-bit) write to 2Ch.  The application software  must
+take great care to avoid inadvertently writing data to 2Fh  while
+updating registers 2Ch-2Eh (unless that is the desired effect).
+
+
+Receiving Commands from the Board:
+Whenever the coprocessor writes data to the DPRAM register at PCI
+offset address 0Fh, a special "INTA" flag is set inside the  FPGA
+which can be read via the byte at PCI offset address FEh (bit 0).
+If  enabled,  this will also simultaneously drive the  PCI  INTA#
+line  low  (see separate discussion).  Whenever  the  application
+software  reads this "Board-to-Host Mailbox Port" at  PCI  offset
+address  0Fh, the "INTA" flag is automatically cleared,  and  the
+PCI INTA# line is automatically released (Hi-Z).
+
+
+How to Enable PCI INTA# Operations:
+If PCI hardware interrupts are to be used with this board,  write
+32-bit  doubleword 00000010h (bit 4 high, all other bits low)  to
+PCI offset address FCh.  Word and byte writes will not work!  The
+INTA#  line state will be unaffected by this  write.   Subsequent
+coprocessor writes to 0Fh will cause INTA# to be pulled low.  The
+interrupt enable status is determined by reading FEh bit 4.
+
+
+How to Disable PCI INTA# Operations:
+Write  32-bit  doubleword 00000000h to PCI  offset  address  FCh.
+Word  and  byte writes will not work properly!   The  INTA#  line
+state  will be unaffected by this write.  Subsequent  coprocessor
+writes to 0Fh will have no effect on INTA#.
+
+
+
+
+               PCI-TC BOARD PCI INTERFACE PROTOCOL
+                           (continued)
+
+
+
+Interrupt vs. Polled Operations:
+By default, after any hardware reset, the board's "INTA#"  output
+driver is disabled (Hi-Z).  Polled operations are simpler and are
+preferred  for  PCI-TC applications unless  the  polling  latency
+becomes unacceptable, perhaps because the system software  spends
+a  lot  of time doing other things, in which  case  PCI  hardware
+interrupts  may  become necessary.  If  hardware  interrupts  are
+being  used,  all  "data  ready"  and  "command  response"  codes
+appearing at DPRAM register 0Fh will cause a hardware  interrupt,
+and MUST be handled by the ISR.
+
+
+Polled Mode, Receiving Codes:
+1) Read  FEh, wait for bit 0 (INTA flag) to go  high,  indicating
+   that  the coprocessor has written data to DPRAM register  0Fh.
+   Save this byte for later.
+2) Read  code byte from DPRAM register 0Fh.   This  automatically
+   clears the INTA flag.
+3) Read/process data registers as needed.
+4) If  FEh  bit  2  is already low (from  #1  above),  skip  this
+   section.   Otherwise,  read  FEh, wait for bit 2  to  go  low,
+   indicating that the coprocessor is ready to receive a command.
+   If  bit 2 does not go low within a reasonable amount  of  time
+   (20ms?),  assume  that the PCI-TC board has  failed  and  take
+   appropriate action.
+5) Write 00h to 2Fh.  This enables the next coprocessor code.
+Note that the coprocessor cannot sense the INTA flag state, so it
+will  wait for the appropriate interrupt acknowledgement  command
+before  writing  any  more  data to  DPRAM  register  0Fh.   This
+theoretically prevents the coprocessor from overworking the  host
+processor.
+
+
+Polled Mode, Sending Commands:
+1) Read  FEh,  wait  for bit 2 to go  low,  indicating  that  the
+   coprocessor is ready to receive the command. If bit 2 does not
+   go low within a reasonable amount of time (20ms?), assume that
+   the PCI-TC board has failed and take appropriate action.
+2) Write  command  byte  to  2Fh.   This  automatically  sends  a
+   hardware interrupt to the coprocessor.
+3) Begin  polling,  as  outlined  above,  until  the  appropriate
+   command  response code is received.  Be sure to  store/process
+   other  codes which may be received at 0Fh (data ready,  etc.).
+   If  the appropriate command response is not received within  a
+   reasonable  amount  of time (20ms?), assume  that  the  PCI-TC
+   board has failed and take appropriate action.
+
+
+
+
+               PCI-TC BOARD PCI INTERFACE PROTOCOL
+                           (continued)
+
+
+
+Interrupt Operations Overview:
+The INTA# hardware interrupt output from the PCI-TC board may  be
+connected  directly to the interrupt output line(s) of other  PCI
+resources,  and  may  also be mapped  (depending  on  motherboard
+wiring)  to  just about any host PC  interrupt  controller  input
+line.   Whenever  a PCI-TC board's ISR is called, it  must  first
+read  PCI offset address FEh, bit 1 (INTA_DRVR flag),  to  ensure
+that this board is indeed driving the interrupt line active.
+
+
+Interrupt Mode, Receiving Codes (via ISR only!):
+1) Read FEh, make sure bit 1 (INTA_DRVR flag) is high, indicating
+   that this board is indeed driving the INTA# line. Save this byte.
+2) Read  code byte from DPRAM register 0Fh.   This  automatically
+   clears the INTA_DRVR flag and releases the INTA# line.
+3) Read/process data registers as needed.
+4) If  FEh  bit  2  is already low (from  #1  above),  skip  this
+   section.   Otherwise,  read  FEh, wait for bit 2  to  go  low,
+   indicating that the coprocessor is ready to receive a command.
+   If  bit 2 does not go low within a reasonable amount  of  time
+   (20ms?),  assume  that the PCI-TC board has  failed  and  take
+   appropriate action.
+5) Write 00h to 2Fh.  This enables the next coprocessor code.
+6) If  the  software "BUSY" flag is cleared, skip  this  section.
+   Otherwise, read FEh, wait for bit 2 to go low, indicating that
+   the  coprocessor is ready to receive a command. If bit 2  does
+   not go low within a reasonable amount of time (20ms?),  assume
+   that the PCI-TC board has failed and take appropriate  action.
+   This step guarantees that the main program will not  overwrite
+   the 00h command byte just sent.
+7) Return from ISR.
+
+
+Interrupt Mode, Sending Commands (from main application):
+1) Set a software "BUSY" flag.
+2) Read  FEh,  wait  for bit 2 to go  low,  indicating  that  the
+   coprocessor is ready to receive the command. If bit 2 does not
+   go low within a reasonable amount of time (20ms?), assume that
+   the PCI-TC board has failed and take appropriate action.
+3) Write  command  byte  to  2Fh.   This  automatically  sends  a
+   hardware interrupt to the coprocessor.
+4) Wait for ISR to receive the appropriate command response code.
+   Be  sure  to  store/process  other codes  which  may  also  be
+   received  by the ISR (data ready, etc.).  If  the  appropriate
+   command response is not received within a reasonable amount of
+   time (20ms?), assume that the PCI-TC board has failed and take
+   appropriate action.
+5) Clear the software "BUSY" flag.
+
+
+               PCI-TC BOARD PCI INTERFACE PROTOCOL
+                           (continued)
+
+
+List of Valid Commands:
+Following  are command codes which you can send to the  board  by
+writing them to the "Host-to-Board Mailbox Port" at 2Fh:
+
+00h  =>  Enable next code in mailbox port at 0Fh.
+
+02h  =>  Board software reset.  Does not reconfigure the FPGA
+         (which contains PCI configuration information).
+         Allow about 500ms for completion.
+
+03h  =>  Change board operations to SMPTE mode and Idle Mode.
+04h  =>  Change board operations to EBU mode and Idle Mode.
+
+20h  =>  Change board operations to Idle Mode.
+21h  =>  Change board operations to LTC Reader Mode.
+22h  =>  Change board operations to VITC Reader Mode.
+23h  =>  Change board operations to Auto LTC/VITC Reader Mode.
+
+Note that the PCI-LTC/RDR board boots up in LTC Reader Mode,  and
+that  it  will read both SMPTE and EBU LTC  automatically.   Thus
+normally no mode control commands need to be sent to this board.
+
+Note  also  that if you send mode control command 23h to  a  PCI-
+LTC/RDR board, for example, the board will reply with a 21h code,
+indicating  that it is in LTC Reader Mode, which is  the  closest
+mode available to what was requested.
+
+Sending any other commands to the board must be done at your  own
+risk, as they may damage the board and require a repair return.
+
+
+
+
+List of Command Responses and Interrupt Codes:
+Following  are the code bytes which you can expect to  find  when
+reading the "Board-to-Host Mailbox Port" at 0Fh:
+
+xxh  =>  Echo of the command code you sent to the board at 2Fh
+         if everything is OK (a command acknowledgement code).
+
+13h  =>  TC reader data is ready (must enable 2Eh bit 0 first!).
+
+50h  =>  TC comparator match found (must enable 2Eh bit 5 first!).
+
+Fxh  =>  ERROR of some kind, such as an unknown command.
+
+More  codes  will  be added to this list as  newer  board  models
+become available.
