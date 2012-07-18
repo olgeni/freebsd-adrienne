@@ -25,5 +25,7 @@ Bugs
 ----
 
 - Possibly still a few.
+- Missing documentation (especially the read block format that you'll have
+  to guess by reading the Adrienne docs).
 - Most importantly, the source code does not conform to *style(9)* (even if
-it was improved a bit before publishing).
+  it was improved a bit before publishing).
