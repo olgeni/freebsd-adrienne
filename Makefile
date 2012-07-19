@@ -8,6 +8,3 @@ SRCS=	adrienne.c \
 	pci_if.h
 
 .include <bsd.kmod.mk>
-
-cleanup:
-	rm -f @ machine x86
