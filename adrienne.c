@@ -42,8 +42,6 @@
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>
 
-#include "adrienne.h"
-
 #define ADRIENNE_PCI_VENDOR 0xAECB
 #define ADRIENNE_PCI_DEVICE 0x6250
 
