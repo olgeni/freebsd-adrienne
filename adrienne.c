@@ -23,7 +23,7 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/param.h>
+#include <sys/types.h>
 #include <sys/systm.h>
 #include <sys/conf.h>
 #include <sys/kernel.h>
