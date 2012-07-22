@@ -280,6 +280,7 @@ adr_read (struct cdev *cdev, struct uio *uio, int ioflag)
 
 	sc->available = 0;
 
+	/* FIXME probably not the best way to use uiomove */
 	if ((error = uiomove (buffer, DATA_BLOCK_SIZE, uio)) != 0)
                 return error;
 
