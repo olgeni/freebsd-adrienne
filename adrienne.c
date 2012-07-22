@@ -188,7 +188,7 @@ send_command (struct adr_sc *sc, uint8_t command)
 
 	if (counter == 0) {
 		if (bootverbose)
-			printf ("send_command: counter timeout\n");
+			device_printf (sc->dev, "send_command: counter timeout\n");
 
 		return EIO;
 	}
@@ -198,7 +198,7 @@ send_command (struct adr_sc *sc, uint8_t command)
 
 	if (tsleep (sc, PRIBIO, "adricmd", 1 * hz) == EWOULDBLOCK) {
 		if (bootverbose)
-			printf ("send_command: interrupt timeout\n");
+			device_printf (sc->dev, "send_command: interrupt timeout\n");
 
 		return EIO;
 	}
