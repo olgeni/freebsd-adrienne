@@ -25,20 +25,15 @@
 
 #include <sys/types.h>
 #include <sys/systm.h>
+#include <sys/module.h>
 #include <sys/conf.h>
 #include <sys/kernel.h>
-#include <sys/module.h>
 #include <sys/bus.h>
 #include <sys/uio.h>
-#include <sys/malloc.h>
 #include <sys/poll.h>
 #include <sys/selinfo.h>
-
 #include <machine/bus.h>
-#include <machine/resource.h>
-
 #include <sys/rman.h>
-
 #include <dev/pci/pcivar.h>
 #include <dev/pci/pcireg.h>
 
