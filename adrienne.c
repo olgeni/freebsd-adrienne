@@ -312,7 +312,7 @@ adr_intr (void *parameter)
 
 	switch (response) {
 	case 0x13:
-		/* TC reader data is ready (must enable 2Eh bit 0 first!). */
+		/* TC reader data is ready (must enable 2Eh bit 0 first!) */
 		sc->tc_hh = bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, READER_TIME_BITS_HOURS);
 		sc->tc_mm = bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, READER_TIME_BITS_MINUTES);
 		sc->tc_ss = bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, READER_TIME_BITS_SECONDS);
@@ -335,11 +335,11 @@ adr_intr (void *parameter)
 		break;
 
 	case 0x50:
-		/* TC comparator match found (must enable 2Eh bit 5 first!). */
+		/* TC comparator match found (see ioif2.txt) */
 		break;
 
 	default:
-		/* Echo of the command code */
+		/* Echo of the command code (see ioif2.txt) */
 		wakeup (sc);
 		break;
 	}
