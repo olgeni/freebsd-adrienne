@@ -124,23 +124,21 @@ static d_write_t     adr_write;
 static d_poll_t      adr_poll;
 static driver_intr_t adr_intr;
 
-static struct cdevsw adr_cdevsw =
-{
-	/* version */ .d_version = D_VERSION,
-	/* flags */   .d_flags   = D_NEEDGIANT,
-	/* open */    .d_open    = adr_open,
-	/* close */   .d_close   = adr_close,
-	/* read */    .d_read    = adr_read,
-	/* write */   .d_write   = adr_write,
-	/* ioctl */   .d_ioctl   = adr_ioctl,
-	/* poll */    .d_poll    = adr_poll,
-	/* name */    .d_name    = "adrienne"
+static struct cdevsw adr_cdevsw = {
+	.d_version = D_VERSION,
+	.d_flags   = D_NEEDGIANT,
+	.d_open    = adr_open,
+	.d_close   = adr_close,
+	.d_read    = adr_read,
+	.d_write   = adr_write,
+	.d_ioctl   = adr_ioctl,
+	.d_poll    = adr_poll,
+	.d_name    = "adrienne"
 };
 
 static devclass_t adr_devclass;
 
-struct adr_sc
-{
+struct adr_sc {
 	device_t		dev;
 	struct cdev		*cdev;
 
@@ -155,7 +153,7 @@ struct adr_sc
 	bus_space_handle_t	irq_bh;
 	void			*irq_cookie;
 
-	uint8_t		 	tc_hh, tc_mm, tc_ss, tc_ff;
+	uint8_t			tc_hh, tc_mm, tc_ss, tc_ff;
 	uint8_t			ub_hh, ub_mm, ub_ss, ub_ff;
 	uint8_t			embedded, status;
 
@@ -171,7 +169,7 @@ reset_board (struct adr_sc *sc)
 	int counter = 1000;
 
 	while (((bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, SPECIAL_BOARD_STATUS_REGISTER)
-	         & STATUS_MAILBOX_FULL) != 0) && (counter--))
+                 & STATUS_MAILBOX_FULL) != 0) && (counter--))
 		DELAY (10);
 
 	bus_space_write_1 (sc->bar0_bt, sc->bar0_bh, HOST_TO_BOARD_MAILBOX_PORT, CMD_BOARD_SOFTWARE_RESET);
@@ -193,8 +191,7 @@ send_command (struct adr_sc *sc, uint8_t command)
 	while (((bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, SPECIAL_BOARD_STATUS_REGISTER) & STATUS_MAILBOX_FULL) != 0) && (counter--))
 		DELAY (10);
 
-	if (counter == 0)
-	{
+	if (counter == 0) {
 		if (bootverbose)
 			printf ("send_command: counter timeout\n");
 
@@ -204,8 +201,7 @@ send_command (struct adr_sc *sc, uint8_t command)
 	bus_space_write_1 (sc->bar0_bt, sc->bar0_bh, HOST_TO_BOARD_MAILBOX_PORT, command);
 	bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, HOST_TO_BOARD_MAILBOX_PORT);
 
-	if (tsleep (sc, PRIBIO, "adricmd", 1 * hz) == EWOULDBLOCK)
-	{
+	if (tsleep (sc, PRIBIO, "adricmd", 1 * hz) == EWOULDBLOCK) {
 		if (bootverbose)
 			printf ("send_command: interrupt timeout\n");
 
@@ -263,10 +259,8 @@ adr_read (struct cdev *cdev, struct uio *uio, int ioflag)
 
 	int error = 0;
 
-	if (!sc->available)
-	{
-		if (tsleep (sc, PRIBIO, "adrird", 3 * hz) == EWOULDBLOCK)
-		{
+	if (!sc->available) {
+		if (tsleep (sc, PRIBIO, "adrird", 3 * hz) == EWOULDBLOCK) {
 			if (bootverbose)
 				printf ("adr_read: timeout (EWOULDBLOCK)\n");
 
@@ -314,13 +308,8 @@ adr_poll (struct cdev *cdev, int events, struct thread *td)
 
 	int revents = 0, mask = 0;
 
-	if (events & (POLLIN | POLLRDNORM))
-	{
-		if (sc->available)
-		{
-			mask |= (POLLIN | POLLRDNORM);
-		}
-	}
+	if ((events & (POLLIN | POLLRDNORM)) && sc->available)
+		mask |= (POLLIN | POLLRDNORM);
 
 	if (mask != 0)
 		revents = events & mask;
@@ -337,8 +326,7 @@ adr_intr (void *parameter)
 
 	uint8_t response = bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, BOARD_TO_HOST_MAILBOX_PORT);
 
-	switch (response)
-	{
+	switch (response) {
 	case 0x13:
 		/* TC reader data is ready (must enable 2Eh bit 0 first!). */
 		sc->tc_hh = bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, READER_TIME_BITS_HOURS);
@@ -402,8 +390,7 @@ adr_attach (device_t dev)
 
 	sc->bar0_res = bus_alloc_resource_any (dev, SYS_RES_IOPORT, &(sc->bar0_id), RF_ACTIVE);
 
-	if (sc->bar0_res == NULL)
-	{
+	if (sc->bar0_res == NULL) {
 		device_printf (dev, "bus_alloc_resource_any failed (BAR0)\n");
 
 		return ENXIO;
@@ -418,8 +405,7 @@ adr_attach (device_t dev)
 
 #if __FreeBSD_version < 700000
 
-	if (bus_setup_intr (dev, sc->irq_res, INTR_TYPE_MISC, adr_intr, sc, &(sc->irq_cookie)))
-	{
+	if (bus_setup_intr (dev, sc->irq_res, INTR_TYPE_MISC, adr_intr, sc, &(sc->irq_cookie))) {
 		device_printf (dev, "bus_setup_intr failed\n");
 
 		return ENXIO;
@@ -427,8 +413,7 @@ adr_attach (device_t dev)
 
 #else
 
-	if (bus_setup_intr (dev, sc->irq_res, INTR_TYPE_MISC, NULL, adr_intr, sc, &(sc->irq_cookie)))
-	{
+	if (bus_setup_intr (dev, sc->irq_res, INTR_TYPE_MISC, NULL, adr_intr, sc, &(sc->irq_cookie))) {
 		device_printf (dev, "bus_setup_intr failed\n");
 
 		return ENXIO;
@@ -439,12 +424,12 @@ adr_attach (device_t dev)
 	mtx_init (&sc->mutex, "adr_mtx", NULL, MTX_DEF);
 
 	device_printf (dev, "vendor code 0x%02X%02X, board number 0x%02X%02X, revision 0x%c%c\n",
-	               bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, AEC_VENDOR_CODE_HIGH_BYTE),
-	               bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, AEC_VENDOR_CODE_LOW_BYTE),
-	               bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, PCI_TC_BOARD_NUMBER_CODE_HIGH_BYTE),
-	               bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, PCI_TC_BOARD_NUMBER_CODE_LOW_BYTE),
-	               bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, SOFTWARE_REVISION_LETTER),
-	               bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, SOFTWARE_REVISION_NUMBER));
+                       bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, AEC_VENDOR_CODE_HIGH_BYTE),
+                       bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, AEC_VENDOR_CODE_LOW_BYTE),
+                       bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, PCI_TC_BOARD_NUMBER_CODE_HIGH_BYTE),
+                       bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, PCI_TC_BOARD_NUMBER_CODE_LOW_BYTE),
+                       bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, SOFTWARE_REVISION_LETTER),
+                       bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, SOFTWARE_REVISION_NUMBER));
 
 	/* Enable PCI Interrupt */
 	bus_space_read_4 (sc->bar0_bt, sc->bar0_bh, SPECIAL_BOARD_STATUS_REGISTER_BASE);
@@ -476,19 +461,13 @@ adr_detach (device_t dev)
 	struct adr_sc *sc = (struct adr_sc *) device_get_softc (dev);
 
 	if (bus_teardown_intr (dev, sc->irq_res, sc->irq_cookie))
-	{
 		device_printf (dev, "bus_teardown_intr failed\n");
-	}
 
 	if (bus_release_resource (dev, SYS_RES_IRQ, sc->irq_id, sc->irq_res))
-	{
 		device_printf (dev, "bus_release_resource failed\n");
-	}
 
 	if (bus_release_resource (dev, SYS_RES_IOPORT, sc->bar0_id, sc->bar0_res))
-	{
 		device_printf (dev, "bus_release_resource failed (BAR0)\n");
-	}
 
 	destroy_dev (sc->cdev);
 
@@ -497,8 +476,7 @@ adr_detach (device_t dev)
 	return 0;
 }
 
-static device_method_t adr_methods[] =
-{
+static device_method_t adr_methods[] = {
 	/* Device interface */
 	DEVMETHOD (device_probe,  adr_probe),
 	DEVMETHOD (device_attach, adr_attach),
@@ -510,8 +488,7 @@ static device_method_t adr_methods[] =
 #endif
 };
 
-static driver_t adr_driver =
-{
+static driver_t adr_driver = {
 	"adrienne",
 	adr_methods,
 	sizeof (struct adr_sc),
