@@ -109,6 +109,8 @@
 #define CMD_VITC_READER_MODE          0x22
 #define CMD_AUTO_LTC_VITC_READER_MODE 0x23
 
+#define DATA_BLOCK_SIZE 10
+
 static d_open_t      adr_open;
 static d_close_t     adr_close;
 static d_ioctl_t     adr_ioctl;
@@ -261,23 +263,25 @@ adr_read (struct cdev *cdev, struct uio *uio, int ioflag)
 		}
 	}
 
-	uint8_t buffer[10];
+	uint8_t buffer[DATA_BLOCK_SIZE];
 
-	buffer[0] = sc->tc_hh;
-	buffer[1] = sc->tc_mm;
-	buffer[2] = sc->tc_ss;
-	buffer[3] = sc->tc_ff;
-	buffer[4] = sc->ub_hh;
-	buffer[5] = sc->ub_mm;
-	buffer[6] = sc->ub_ss;
-	buffer[7] = sc->ub_ff;
-	buffer[8] = sc->embedded;
-	buffer[9] = sc->status;
+        uint8_t *ptr = buffer;
+
+	*ptr++ = sc->tc_hh;
+	*ptr++ = sc->tc_mm;
+	*ptr++ = sc->tc_ss;
+	*ptr++ = sc->tc_ff;
+	*ptr++ = sc->ub_hh;
+	*ptr++ = sc->ub_mm;
+	*ptr++ = sc->ub_ss;
+	*ptr++ = sc->ub_ff;
+	*ptr++ = sc->embedded;
+	*ptr++ = sc->status;
 
 	sc->available = 0;
 
-	if ((error = uiomove (buffer, sizeof (buffer), uio)) != 0)
-		return error;
+	if ((error = uiomove (buffer, DATA_BLOCK_SIZE, uio)) != 0)
+                return error;
 
 	return error;
 }
