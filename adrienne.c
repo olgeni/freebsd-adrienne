@@ -215,16 +215,10 @@ adr_open (struct cdev *cdev, int flag, int otyp, struct thread *td)
 
 	sc->available = 0;
 
-	if (bootverbose)
-		printf ("adr_open: sending CMD_EBU_MODE_AND_IDLE_MODE\n");
-
 	int error = 0;
 
 	if ((error = send_command (sc, CMD_EBU_MODE_AND_IDLE_MODE)))
 		return error;
-
-	if (bootverbose)
-		printf ("adr_open: sending CMD_AUTO_LTC_VITC_READER_MODE\n");
 
 	if ((error = send_command (sc, CMD_AUTO_LTC_VITC_READER_MODE)))
 		return error;
@@ -236,9 +230,6 @@ static int
 adr_close (struct cdev *cdev, int flag, int otyp, struct thread *td)
 {
 	struct adr_sc *sc = cdev->si_drv1;
-
-	if (bootverbose)
-		printf ("adr_close: sending CMD_IDLE_MODE\n");
 
 	int error = send_command (sc, CMD_IDLE_MODE);
 
@@ -254,14 +245,9 @@ adr_read (struct cdev *cdev, struct uio *uio, int ioflag)
 
 	int error = 0;
 
-	if (!sc->available) {
-		if (tsleep (sc, PRIBIO, "adrird", 3 * hz) == EWOULDBLOCK) {
-			if (bootverbose)
-				printf ("adr_read: timeout (EWOULDBLOCK)\n");
-
+	if (!sc->available)
+		if (tsleep (sc, PRIBIO, "adrird", 3 * hz) == EWOULDBLOCK)
 			return EIO;
-		}
-	}
 
 	uint8_t buffer[DATA_BLOCK_SIZE];
 
@@ -433,17 +419,11 @@ adr_attach (device_t dev)
 	bus_space_read_4 (sc->bar0_bt, sc->bar0_bh, SPECIAL_BOARD_STATUS_REGISTER_BASE);
 	bus_space_write_4 (sc->bar0_bt, sc->bar0_bh, SPECIAL_BOARD_STATUS_REGISTER_BASE, 0x00000010);
 
-	if (bootverbose)
-		printf ("adr_attach: calling reset_board\n");
-
 	reset_board (sc);
 
 	/* Enable TC Interrupt */
 	bus_space_write_1 (sc->bar0_bt, sc->bar0_bh, INTERRUPT_CONTROL_BIT_MAP, INTERRUPT_CONTROL_TC_READER);
 	bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, INTERRUPT_CONTROL_BIT_MAP);
-
-	if (bootverbose)
-		printf ("adr_attach: sending CMD_IDLE_MODE\n");
 
 	int error = 0;
 
