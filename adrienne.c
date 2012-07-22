@@ -170,7 +170,7 @@ reset_board (struct adr_sc *sc)
 	bus_space_write_1 (sc->bar0_bt, sc->bar0_bh, HOST_TO_BOARD_MAILBOX_PORT, CMD_BOARD_SOFTWARE_RESET);
 	bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, HOST_TO_BOARD_MAILBOX_PORT);
 
-	tsleep (sc->cdev, PRIBIO, "adricmd", hz / 2);
+	tsleep (sc->cdev, PRIBIO, "adricmd", hz / 2); /* nobody will call wakeup on sc->cdev */
 
 	bus_space_write_1 (sc->bar0_bt, sc->bar0_bh, HOST_TO_BOARD_MAILBOX_PORT, CMD_ACKNOWLEDGE);
 	bus_space_read_1 (sc->bar0_bt, sc->bar0_bh, HOST_TO_BOARD_MAILBOX_PORT);
