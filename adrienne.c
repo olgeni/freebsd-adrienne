@@ -1,3 +1,5 @@
+/* -*- c-file-style: "bsd"; indent-tabs-mode: t; -*- */
+
 /*-
  * Copyright (c) 2012 Giacomo Olgeni. All rights reserved.
  *
