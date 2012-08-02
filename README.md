@@ -21,6 +21,50 @@ develop a simple character device driver in FreeBSD (do yourself a favor
 and read "FreeBSD Device Drivers" by Joseph Kong before writing anything -
 this driver was written well before reading it!)
 
+How to install
+==============
+
+Run `make install` from the project directory:
+
+	# make install
+	install -o root -g wheel -m 555 adrienne.ko /boot/kernel
+	kldxref /boot/kernel
+	#
+
+To clean up after building:
+
+	# make clean cleandepend
+
+Remember to do this when you switch architecture while using the same
+source tree (i.e. when building from i386 and amd64 boxes over a NFS
+share).
+
+To load the driver:
+
+	# make load
+
+or
+
+	# kldload adrienne
+
+To unload:
+
+	# make unload
+
+or
+
+	# kldunload adrienne
+
+To remove:
+
+	# rm -f /boot/kernel/adrienne.ko
+	# kldxref /boot/kernel
+
+To load at every boot, add `adrienne_load="YES"` to your `/boot/loader.conf`.
+
+You might also create a package to be used with `pkg_add` and `pkg_delete`.
+Be sure to use matching FreeBSD versions when deploying binaries.
+
 Bugs
 ----
 
