@@ -6,7 +6,7 @@ Here you will find a simple driver for Adrienne PCI timecode readers
 Electronics, so you are on your own here...
 
 The driver implementation is very simple and was derived from the board
-documentation that you will find in the *doc* directory. Adrienne
+documentation that you will find in the `doc` directory. Adrienne
 Electronics includes full documentation with each product so you will be
 able to adapt it to your hardware if you have a more recent version.
 
