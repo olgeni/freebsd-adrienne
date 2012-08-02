@@ -18,8 +18,9 @@ Then the project was stopped, but not because of a driver fault :)
 In the unlikely case that you own an actual Adrienne timecode reader you
 may give it a spin, otherwise it should get you started if you plan to
 develop a simple character device driver in FreeBSD (do yourself a favor
-and read "FreeBSD Device Drivers" by Joseph Kong before writing anything -
-this driver was written well before reading it!)
+and read "[FreeBSD Device Drivers](http://nostarch.com/bsddrivers.htm)" by
+Joseph Kong before writing anything - this driver was written well before
+reading it!)
 
 How to install
 ==============
