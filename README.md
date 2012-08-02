@@ -39,23 +39,23 @@ Remember to do this when you switch architecture while using the same
 source tree (i.e. when building from i386 and amd64 boxes over a NFS
 share).
 
-To load the driver:
+To load or unload the locally compiled driver:
 
 	# make load
 
-or
-
-	# kldload adrienne
-
-To unload:
+and
 
 	# make unload
 
-or
+To load or unload the installed driver:
+
+	# kldload adrienne
+
+and
 
 	# kldunload adrienne
 
-To remove:
+To uninstall the driver:
 
 	# rm -f /boot/kernel/adrienne.ko
 	# kldxref /boot/kernel
